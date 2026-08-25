@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>语音管道测试页</title>
+  <style>
+    body { background: #18181f; color: #eee; font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+    h3 { color: #9ad0ff; }
+    #state { color: #ffd54d; margin-top: 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h3>语音管道测试页（日语语音循环播放）</h3>
+  <audio id="a" preload="auto" controls></audio>
+  <div id="state">初始化…</div>
+  <script>
+    // 循环播放多个不同的日语语音片段，片段间留停顿，用于触发按句切分识别。
+    // 音频样本放在 tests/e2e/assets/ 下（不入库，见 assets/README.md）
+    const clips = ['ja2.ogg', 'ja4.ogg', 'ja5.ogg'];
+    let idx = 0;
+    const a = document.getElementById('a');
+    const state = document.getElementById('state');
+
+    function playNext() {
+      if (idx >= clips.length) {
+        idx = 0;
+        state.textContent = '一轮播放完，2 秒后重播…';
+        setTimeout(playNext, 2000);
+        return;
+      }
+      a.src = '/assets/' + clips[idx];
+      a.play().then(() => {
+        state.textContent = '播放中 [' + (idx + 1) + '/' + clips.length + '] ' + clips[idx];
+      }).catch((e) => {
+        state.textContent = '播放失败（点击页面重试）: ' + e.message;
+      });
+    }
+    a.addEventListener('ended', () => {
+      idx++;
+      setTimeout(playNext, 900); // 片段间停顿，制造切分点
+    });
+    a.volume = 0.6;
+    document.addEventListener('click', () => a.play());
+    playNext();
+  </script>
+</body>
+</html>

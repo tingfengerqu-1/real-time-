@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../src/content/content.css">
+<style>
+  body { background: #1a1a22; min-height: 100vh; margin: 0; }
+  #result {
+    position: fixed; top: 8px; left: 8px; z-index: 9999;
+    color: #7fff9a; font: 13px/1.6 Consolas, monospace; white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<!-- 复刻 content.js buildPanel 的 DOM：ytl-sized(用户拉伸过高度) + 内联 height 的最难场景 -->
+<div id="ytl-sub-panel" class="ytl-sized" style="height: 400px; width: 760px;">
+  <div class="ytl-sub-header">
+    <span class="ytl-sub-title"><i class="ytl-live-dot"></i>实时字幕</span>
+    <span class="ytl-sub-status">云端通道·多路并行识别中云端通道·多路并行识别中云端通道·多路并行识别中</span>
+    <span class="ytl-sub-chip ytl-lat">1.4s</span>
+    <span class="ytl-sub-chip ytl-cnt">13句</span>
+    <div class="ytl-sub-btns">
+      <button>仅中</button><button>暂停</button><button>A⁻</button><button>A⁺</button><button>样式</button><button>高透明</button><button>SRT</button><button>⧉</button><button>↺</button><button>清空</button><button class="cb">收起</button>
+    </div>
+  </div>
+  <div class="ytl-sub-body">
+    <div class="ytl-sub-lines">
+      <div class="ytl-sub-line"><div class="ytl-sub-orig">テスト行テスト行</div><div class="ytl-sub-trans">测试行测试行</div></div>
+      <div class="ytl-sub-line"><div class="ytl-sub-orig">テスト行テスト行</div><div class="ytl-sub-trans">测试行测试行</div></div>
+      <div class="ytl-sub-line"><div class="ytl-sub-orig">テスト行テスト行</div><div class="ytl-sub-trans">测试行测试行</div></div>
+    </div>
+  </div>
+</div>
+<pre id="result">运行中…</pre>
+<script>
+  const panel = document.getElementById('ytl-sub-panel');
+  const cb = document.querySelector('.cb');
+  const out = [];
+  const P = (name, ok) => out.push((ok ? '[PASS] ' : '[FAIL] ') + name);
+
+  let collapsed = false;
+  cb.addEventListener('click', () => {
+    collapsed = !collapsed;
+    panel.classList.toggle('ytl-collapsed', collapsed);
+    cb.textContent = collapsed ? '展开' : '收起';
+  });
+
+  setTimeout(() => {
+    // 1) 初始展开态：按钮行不溢出面板（全部按钮在盒内）
+    let pr = panel.getBoundingClientRect();
+    let okBtns = [...document.querySelectorAll('.ytl-sub-btns button')].every((b) => {
+      const r = b.getBoundingClientRect();
+      return r.right <= pr.right + 1 && r.left >= pr.left - 1;
+    });
+    P('展开态全部按钮在面板盒内（不被裁剪点不到）', okBtns);
+
+    // 2) 模拟点击"收起"
+    cb.click();
+    const bodyCs = getComputedStyle(document.querySelector('.ytl-sub-body'));
+    P('收起后内容区 display:none（!important 压过 ytl-sized 的 flex）', bodyCs.display === 'none');
+
+    pr = panel.getBoundingClientRect();
+    P('收起后面板高度塌缩回首部一行（<80px，内联 400px 被覆盖）', pr.height < 80);
+
+    const btns = [...document.querySelectorAll('.ytl-sub-btns button')];
+    const othersHidden = btns.slice(0, -1).every((b) => getComputedStyle(b).display === 'none');
+    P('收起后其余 10 个按钮隐藏（只留展开按钮）', othersHidden);
+
+    const chipsHidden = [...document.querySelectorAll('.ytl-sub-chip')].every((c) => getComputedStyle(c).display === 'none');
+    P('收起后统计角标隐藏', chipsHidden);
+
+    const eb = btns[btns.length - 1];
+    const er = eb.getBoundingClientRect();
+    const visibleInside = getComputedStyle(eb).display !== 'none' && er.right <= pr.right + 1 && er.left >= pr.left - 1 && er.width > 0;
+    P('展开按钮可见且在胶囊盒内（可点击恢复）', visibleInside);
+
+    // 3) 模拟点击"展开"恢复
+    eb.click();
+    const pr2 = panel.getBoundingClientRect();
+    P('点击展开后面板恢复 400px 设定高度', Math.abs(pr2.height - 400) < 2);
+    P('展开后内容区恢复可见', getComputedStyle(document.querySelector('.ytl-sub-body')).display !== 'none');
+    const allBtnsBack = btns.every((b) => getComputedStyle(b).display !== 'none');
+    P('展开后全部按钮恢复显示', allBtnsBack);
+
+    document.getElementById('result').textContent = out.join('\n') + '\n\n' + (out.every((l) => l.startsWith('[PASS]')) ? '=== 全部通过 ===' : '=== 存在失败 ===');
+  }, 400);
+</script>
+</body>
+</html>
