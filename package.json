@@ -1,0 +1,20 @@
+{
+  "name": "real-time",
+  "version": "1.5.0",
+  "private": true,
+  "type": "module",
+  "description": "YouTube 直播实时语音识别 + 翻译字幕的 Chrome 扩展（本地 Whisper / 云端 ASR / 大模型翻译）",
+  "scripts": {
+    "get-libs": "node tools/get-libs.mjs",
+    "patch-libs": "node tools/get-libs.mjs --patch-only",
+    "version": "node tools/make-versioned.cjs",
+    "bump": "node tools/make-versioned.cjs --bump",
+    "dist": "node tools/make-dist.cjs",
+    "test": "node tests/run-all.mjs",
+    "e2e:server": "node tests/e2e/server.cjs",
+    "e2e": "node tests/e2e/run-e2e.cjs"
+  },
+  "devDependencies": {
+    "terser": "^5.50.0"
+  }
+}
